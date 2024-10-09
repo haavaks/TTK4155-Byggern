@@ -1,0 +1,12 @@
+Main:
+
+Start Game
+Settings -> submenu
+
+
+Settings:
+
+<- Settings
+Setting 1
+Setting 2
+Setting 3
