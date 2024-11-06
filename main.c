@@ -7,6 +7,9 @@
 #include "can.h"
 #include "time.h"
 #include "PWM.h"
+#include "adc.h"
+#include "timer.h"
+#include "encoder.h"
 
 #define F_CPU 84000000
 /*
@@ -20,6 +23,12 @@
  */
 // #include "../path_to/uart.h"
 
+typedef enum
+{
+    Playing = 0,
+    Not_playing = 1
+} GameState;
+
 int main()
 {
     SystemInit();
@@ -27,27 +36,76 @@ int main()
     WDT->WDT_MR = WDT_MR_WDDIS; // Disable Watchdog Timer
 
     can_init((CanInit){.brp = 41, .phase1 = 6, .phase2 = 5, .propag = 1, .sjw = 0, .smp = 0}, 0);
-    // can_init((CanInit){0x00290561}, 0);
 
-    // Uncomment after including uart above
     uart_init(F_CPU, 9600);
 
     PWM_init();
 
-    CanMsg msg;
+    volatile CanMsg rx_msg;
+    volatile CanMsg tx_msg;
+    GameState state = Not_playing;
+
+    adc_init();
+    uint32_t adc;
+
+    timer_init();
+    uint32_t time;
+
+    Encoder_init();
+
+    int encoder = 0;
 
     while (1)
     {
-        if (can_rx(&msg))
+        switch (state)
         {
-            printf("Message\r\n");
-            can_printmsg(msg);
-            can_tx(msg);
-            if (msg.id == 1) // Joystick pos
+        case Not_playing:
+
+            encoder = REG_TC2_CV0;
+            printf("Encoder: %d\n\r", encoder);
+
+            if (can_rx(&rx_msg))
             {
-                joystick.pos_x = msg.byte[0];
-                joystick.pos_y = msg.byte[1];
+                if (rx_msg.id == Start_game_id)
+                {
+                    printf("STARTING GAME\r\n");
+                    state = Playing;
+                    reset_ADC_isr();
+                    timer_start();
+                }
             }
+            break;
+
+        case Playing:
+
+            if (can_rx(&rx_msg))
+            {
+                update_joystick_pos_from_CAN(rx_msg);
+                // sende tilbake klokke til node1
+                tx_msg.id = Playing;
+                tx_msg.length = sizeof(time);
+                tx_msg.dword[0] = time;
+                can_tx(tx_msg);
+            }
+
+            if (ADC_game_over())
+            {
+                timer_stop();
+
+                state = Not_playing;
+                time = timer_value();
+                printf("GAME OVER\n\r");
+                printf("Time: %x\n\r", time);
+                tx_msg.id = Game_over_id;
+                tx_msg.length = sizeof(time);
+                tx_msg.dword[0] = time;
+                can_tx(tx_msg);
+
+                // time_spinFor(msecs(500));
+
+                // denne ser ikke ut til å gjøre noe
+            }
+            break;
         }
     }
 
