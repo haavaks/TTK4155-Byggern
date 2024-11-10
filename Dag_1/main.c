@@ -38,15 +38,16 @@ unsigned char USART_Receive(void)
 
 void main(void)
 {
-    // DDRB = (1 << 0);
+    // DDRB |= (1 << DDB0);
 
     // while (1)
     // {
-    //     PORTB = 0xFF;
+    //     PORTB |= (1 << PB0);
     //     _delay_ms(500);
-    //     PORTB = 0x00;
+    //     PORTB &= ~(1 << PB0);
     //     _delay_ms(500);
     // }
+
     fdevopen(&USART_Transmit, 0);
 
     USART_Init(MYUBRR);
@@ -63,6 +64,5 @@ void main(void)
     while (1)
     {
         printf("Hello World!\n\r");
-        _delay_ms(50000);
     }
 }

@@ -1,8 +1,8 @@
 #include "Usart.h"
 
-void Usart_init(unsigned int f_cpu)
+void Usart_init(unsigned int ubrr)
 {
-    unsigned int ubrr = f_cpu / 16 / BAUD_RATE - 1;
+    // unsigned int ubrr = f_cpu / 16 / BAUD_RATE - 1;
 
     UBRR0H = (unsigned char)(ubrr >> 8);
     UBRR0L = (unsigned char)ubrr;
@@ -12,6 +12,8 @@ void Usart_init(unsigned int f_cpu)
 
     /* Set frame format: 8data, 2stop bit */
     UCSR0C = (1 << URSEL0) | (1 << USBS0) | (3 << UCSZ00);
+
+    fdevopen(&Usart_transmit, 0);
 }
 
 void Usart_transmit(unsigned char data)
@@ -22,7 +24,6 @@ void Usart_transmit(unsigned char data)
     /* Put data into buffer, sends the data */
     UDR0 = data;
 }
-
 
 unsigned char Usart_receive(void)
 {
