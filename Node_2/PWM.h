@@ -5,15 +5,17 @@
 #include "controller.h"
 #include "sam.h"
 
-#define MOTOR_PWM_PERIOD 100
+#define MOTOR_PWM_PERIOD 30000
 
 struct Joystick_pos_t
 {
     int8_t pos_x;
     int8_t pos_y;
+    int8_t R_slider;
+    int8_t button;
 };
 
-//volatile struct Joystick_pos_t joystick;
+// volatile struct Joystick_pos_t joystick;
 
 // PWM_start must be called to start signals
 void PWM_init();

@@ -76,7 +76,7 @@ void joystick_update(struct Joystick_pos_t *j) // works only if offset is positi
     }
 
     // Updates button pressed
-    j->button = (PINB && (1 << PB2));
+    j->button = (PINB & (1 << PB2));
 }
 
 void joystick_calibrate(struct Joystick_pos_t *j)

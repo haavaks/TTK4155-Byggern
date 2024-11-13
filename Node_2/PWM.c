@@ -1,7 +1,7 @@
 #include "PWM.h"
 
 volatile struct Joystick_pos_t joystick = {0};
-volatile PI_controller controller = {2, 0.1, 1, 0, 0};
+volatile PI_controller controller = {2, 0.1, 0.2, 0, 0};
 
 void PWM_Handler(void)
 {
@@ -9,14 +9,14 @@ void PWM_Handler(void)
     {
         PWM_set_duty_servo(joystick.pos_x);
 
-        //int32_t encoder = (REG_TC2_CV0 + 2810)*(255)/(5620)-128; //actual range 5620
-        int32_t encoder = (REG_TC2_CV0 + 3000)*(255)/(6000)-128;
-        //printf("Maaling: %-5f\n\r", (float)encoder);
+        // int32_t encoder = (REG_TC2_CV0 + 2810)*(255)/(5620)-128; //actual range 5620
+        int32_t encoder = (REG_TC2_CV0 + 3000) * (255) / (6000) - 128;
+        // printf("Maaling: %-5f\n\r", (float)encoder);
 
         float c = PI_controller_update(&controller, (float)encoder, (float)joystick.pos_y);
-        PWM_set_duty_motor(c);
+        // PWM_set_duty_motor(c);
 
-        //printf("Padrag: %-5f Integral: %-5f\n\r", c, controller.integral);
+        // printf("Padrag: %-5f Integral: %-5f\n\r", c, controller.integral);
     }
 }
 
@@ -76,7 +76,7 @@ void PWM_init()
     // Set duty cycle ~1.5 ms
     REG_PWM_CDTY0 |= 0;
 
-    // Set pin13 as pwm output
+    // Set pin12 as pwm output
     PIOB->PIO_PDR |= PIO_PB12;
     PIOB->PIO_ABSR |= PIO_PB12;
 
@@ -84,11 +84,11 @@ void PWM_init()
 
     // Motor dir
 
-        PMC->PMC_PCDR0 |= ID_PIOC;
+    PMC->PMC_PCDR0 |= ID_PIOC;
 
-        PIOC->PIO_OER |= PIO_OER_P23;
+    PIOC->PIO_OER |= PIO_OER_P23;
 
-        PIOC->PIO_PER |= PIO_PER_P23;
+    PIOC->PIO_PER |= PIO_PER_P23;
 }
 
 uint32_t servo_map(int8_t x)
@@ -111,16 +111,16 @@ void PWM_set_duty_servo(int8_t value)
 // TODO: Fix this function! Map from 0 to MOTOR_PWM_PERIOD
 void PWM_set_duty_motor(int8_t value)
 {
-    if(value >= 0)
-        {
-            PIOC->PIO_CODR = PIO_ODR_P23;
-            REG_PWM_CDTYUPD0 = (value)*MOTOR_PWM_PERIOD/127;
-        }
+    if (value >= 0)
+    {
+        PIOC->PIO_CODR = PIO_ODR_P23;
+        REG_PWM_CDTYUPD0 = (value)*MOTOR_PWM_PERIOD / 127;
+    }
     else
-        {
-            PIOC->PIO_SODR = PIO_ODR_P23;
-            REG_PWM_CDTYUPD0 = (-value)*MOTOR_PWM_PERIOD/128;
-        }
+    {
+        PIOC->PIO_SODR = PIO_ODR_P23;
+        REG_PWM_CDTYUPD0 = (-value) * MOTOR_PWM_PERIOD / 128;
+    }
 }
 
 void update_joystick_pos_from_CAN(CanMsg msg)
@@ -129,6 +129,8 @@ void update_joystick_pos_from_CAN(CanMsg msg)
     {
         joystick.pos_x = msg.byte[0];
         joystick.pos_y = msg.byte[1];
+        joystick.R_slider = msg.byte[2];
+        joystick.button = msg.byte[3];
     }
 }
 

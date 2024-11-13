@@ -63,10 +63,12 @@ void CAN_send_joystick(struct Joystick_pos_t *j)
     CAN_message_t *msg = malloc(sizeof(CAN_message_t));
 
     msg->id = 1;
-    msg->len = 2;
+    msg->len = 4;
 
     msg->data[0] = j->pos_x;
     msg->data[1] = j->pos_y;
+    msg->data[2] = 100;
+    msg->data[3] = j->button;
 
     CAN_send(msg);
 

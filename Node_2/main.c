@@ -11,6 +11,7 @@
 #include "timer.h"
 #include "encoder.h"
 #include "controller.h"
+#include "solenoid.h"
 
 #define F_CPU 84000000
 /*
@@ -56,6 +57,8 @@ int main()
     Encoder_init();
     int32_t encoder = 0;
 
+    Solenoid_init();
+
     while (1)
     {
         switch (state)
@@ -69,7 +72,7 @@ int main()
 
                     state = Playing;
 
-                    //PWM_start();
+                    // PWM_start();
                     reset_ADC_isr();
                     timer_start();
                 }
@@ -81,6 +84,15 @@ int main()
             if (can_rx(&rx_msg))
             {
                 update_joystick_pos_from_CAN(rx_msg);
+                if (rx_msg.byte[3] == 0)
+                {
+                    Solenoid_fire();
+                    printf("FIRE\n\r");
+                }
+
+                printf("Slider pos:  %5d", rx_msg.byte[2]);
+                printf("Button: %5d", rx_msg.byte[3]);
+                printf("x-pos %5d\n\r", rx_msg.byte[0]);
 
                 // sende tilbake klokke til node1
                 tx_msg.id = Playing;
@@ -95,12 +107,12 @@ int main()
             if (ADC_game_over())
             {
                 timer_stop();
-                //PWM_stop();
+                // PWM_stop();
 
                 state = Not_playing;
-                time = timer_value();
+                time = timer_value() / 10500000;
                 printf("GAME OVER\n\r");
-                printf("Time: %x\n\r", time);
+                printf("Time: %d\n\r", time);
                 tx_msg.id = Game_over_id;
                 tx_msg.length = sizeof(time);
                 tx_msg.dword[0] = time;
@@ -109,16 +121,4 @@ int main()
             break;
         }
     }
-
-    // PMC->PMC_PCER0 |= (1 << ID_PIOB);
-
-    // PIOB->PIO_PER |= PIO_PB13;
-    // PIOB->PIO_OER |= PIO_PB13;
-    // PIOB->PIO_SODR |= PIO_PB13;
-
-    // while (1)
-    // {
-    //     PIOB->PIO_SODR |= PIO_PB13;
-    //     PIOB->PIO_CODR |= PIO_PB13;
-    // }
 }

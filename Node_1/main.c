@@ -51,7 +51,6 @@ void main(void)
             joystick_update(&joystick);
             curr_menu = navigate_menu(&joystick, curr_menu, &menu_pos);
             print_menu(curr_menu, menu_pos);
-
             if (get_start_game_flag())
             {
                 state = Playing;
@@ -63,7 +62,7 @@ void main(void)
                 printf("Start game\r\n");
             }
 
-            _delay_ms(10);
+            _delay_ms(50);
             break;
 
         case (Playing):
@@ -74,9 +73,22 @@ void main(void)
 
             if (CAN_receive()->id == Game_over_id)
             {
-                state = Menu;
                 printf("GAME OVER\r\n");
-                printf("Time: %x\r\n", CAN_receive()->data[0]);
+                state = Menu;
+                uint8_t time1 = CAN_receive()->data[0];
+                char str[16];
+                sprintf(str, "%d", time1);
+                printf("Time: %d\r\n", time1);
+
+                // Display time on OLED
+                OLED_clear_screen();
+                OLED_goto_page(1);
+                OLED_print_str("   GAME OVER!   ");
+                OLED_goto_page(4);
+                OLED_print_str("   SCORE: ");
+                OLED_print_str(str);
+
+                _delay_ms(5000);
             }
 
             _delay_ms(10);
