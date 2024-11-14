@@ -4,8 +4,7 @@ volatile char *adc = (char *)0x1400;
 
 void ADC_init(void)
 {
-    DDRD |= (1 << 5); // klokkesignal til ADC
-
+    DDRD |= (1 << 5);
     TCCR1A = (1 << COM1A0);
     TCCR1B = (1 << WGM12) | (1 << CS10);
 }

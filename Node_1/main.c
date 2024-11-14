@@ -19,6 +19,8 @@
 
 #define MYUBRR F_CPU / 16 / BAUD_RATE - 1
 
+extern char highscore[] = "0";
+
 typedef enum
 {
     Playing = 0,
@@ -58,8 +60,9 @@ void main(void)
                     .id = Start_game_id};
                 CAN_send(&start_game);
                 reset_start_game_flag();
-                OLED_fill_screen();
-                printf("Start game\r\n");
+                OLED_clear_screen();
+                OLED_goto_page(3);
+                OLED_print_str("   PLAYING");
             }
 
             _delay_ms(50);
@@ -69,16 +72,16 @@ void main(void)
             joystick_update(&joystick);
             CAN_send_joystick(&joystick);
 
-            joystick_print_pos(&joystick);
-
             if (CAN_receive()->id == Game_over_id)
             {
-                printf("GAME OVER\r\n");
                 state = Menu;
-                uint8_t time1 = CAN_receive()->data[0];
+                uint8_t time = CAN_receive()->data[0];
+                
                 char str[16];
-                sprintf(str, "%d", time1);
-                printf("Time: %d\r\n", time1);
+                sprintf(str, "%d", time);
+                if (str > highscore){
+                    strcpy(highscore, str);
+                }
 
                 // Display time on OLED
                 OLED_clear_screen();

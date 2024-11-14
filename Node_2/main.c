@@ -14,16 +14,7 @@
 #include "solenoid.h"
 
 #define F_CPU 84000000
-/*
- * Remember to update the Makefile with the (relative) path to the uart.c file.
- * This starter code will not compile until the UART file has been included in the Makefile.
- * If you get somewhat cryptic errors referencing functions such as _sbrk,
- * _close_r, _write_r, _fstat etc, you have most likely not done that correctly.
 
- * If you get errors such as "arm-none-eabi-gcc: no such file", you may need to reinstall the arm gcc packages using
- * apt or your favorite package manager.
- */
-// #include "../path_to/uart.h"
 
 typedef enum
 {
@@ -42,7 +33,7 @@ int main()
     uart_init(F_CPU, 9600);
 
     PWM_init();
-    PWM_start();
+    //PWM_stop();
 
     volatile CanMsg rx_msg;
     volatile CanMsg tx_msg;
@@ -55,9 +46,9 @@ int main()
     uint32_t time;
 
     Encoder_init();
-    int32_t encoder = 0;
 
     Solenoid_init();
+
 
     while (1)
     {
@@ -71,8 +62,7 @@ int main()
                     printf("STARTING GAME\r\n");
 
                     state = Playing;
-
-                    // PWM_start();
+                    //PWM_start();
                     reset_ADC_isr();
                     timer_start();
                 }
@@ -90,24 +80,22 @@ int main()
                     printf("FIRE\n\r");
                 }
 
-                printf("Slider pos:  %5d", rx_msg.byte[2]);
-                printf("Button: %5d", rx_msg.byte[3]);
-                printf("x-pos %5d\n\r", rx_msg.byte[0]);
+                // printf("Y-pos:  %5d", rx_msg.byte[1]);
+                // printf("  Button: %5d", rx_msg.byte[3]);
+                // printf("  x-pos %5d\n\r", rx_msg.byte[0]);
 
-                // sende tilbake klokke til node1
+                // Send score back to Node1
                 tx_msg.id = Playing;
                 tx_msg.length = sizeof(time);
                 tx_msg.dword[0] = time;
                 can_tx(tx_msg);
             }
 
-            // encoder = REG_TC2_CV0;
-            // printf("Encoder: %d\n\r", encoder);
-
             if (ADC_game_over())
             {
+                printf("GAME OVER 1\n\r");
                 timer_stop();
-                // PWM_stop();
+                //PWM_stop();
 
                 state = Not_playing;
                 time = timer_value() / 10500000;

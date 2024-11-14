@@ -35,7 +35,6 @@ void CAN_init(void)
 
     cli();
 
-    // SREG |= (1 << 7);    // Global interrrupt enable
     MCUCR |= (1 << ISC01);
     GICR |= (1 << INT0); // External interrupt request 2 enable
 
@@ -77,16 +76,5 @@ void CAN_send_joystick(struct Joystick_pos_t *j)
 
 CAN_message_t *CAN_receive(void)
 {
-    // CAN_message_t *msg = malloc(sizeof(CAN_message_t));
-
-    // msg->id = (mcp2515_read(MCP_RXB0SIDH) << 3) | (mcp2515_read(MCP_RXB0SIDL) >> 5);
-
-    // msg->len = mcp2515_read(MCP_RXB0DLC);
-
-    // for (int i = 0; i < msg->len; i++)
-    // {
-    //     msg->data[i] = mcp2515_read(MCP_RXB0D0 + i);
-    // }
-
     return &rx_msg;
 }

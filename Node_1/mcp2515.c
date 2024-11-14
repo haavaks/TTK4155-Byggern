@@ -15,7 +15,7 @@ uint8_t mcp2515_init()
         printf(" MCP2515 is NOT in configuration mode after reset !\n\r ");
         return 1;
     }
-    // More initialization
+
     return 0;
 }
 
@@ -48,7 +48,6 @@ void mcp2515_write(uint8_t data, uint8_t addr)
     SPI_set_ss();
 }
 
-// TODO sjekk om riktige registre i buffer blir satt
 void mcp2515_rts(uint8_t reg)
 {
     SPI_clear_ss();

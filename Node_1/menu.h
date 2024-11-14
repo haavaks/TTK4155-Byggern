@@ -8,6 +8,8 @@
 #include "Joystick.h"
 #include <stdbool.h>
 
+extern char highscore[];
+
 enum Menu_positions
 {
     POS0 = 0,
@@ -28,7 +30,7 @@ struct menu_t
     struct menu_t *sub_menu[7];
     struct menu_t *parent;
 
-    // funksjon når button pressed
+    // Function when button pressed
     menu_function func;
 };
 

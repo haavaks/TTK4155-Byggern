@@ -3,6 +3,7 @@
 
 volatile bool start_game_flag = 0;
 
+
 struct menu_t *menu_init(struct menu_t *parent, char *title, menu_function func)
 {
     struct menu_t *menu = (struct menu_t *)malloc(sizeof(struct menu_t));
@@ -36,15 +37,22 @@ void start_game_f(void)
     start_game_flag = 1;
 }
 
+
 struct menu_t *init_all_menues()
 {
     struct menu_t *root = menu_init(NULL, "Main Menu", NULL);
 
     struct menu_t *start_game = menu_init(root, "Start game", &start_game_f);
     struct menu_t *settings = menu_init(root, "Settings", NULL);
+    struct menu_t *highscore_menu = menu_init(root, "Highscore", NULL);
 
     root->sub_menu[0] = start_game;
     root->sub_menu[1] = settings;
+    root->sub_menu[2] = highscore_menu;
+
+    struct menu_t *show_highscore = menu_init(highscore_menu, highscore, NULL);
+
+    highscore_menu->sub_menu[0] = show_highscore;
 
     struct menu_t *setting_0 = menu_init(settings, "Setting 1", NULL);
     struct menu_t *setting_1 = menu_init(settings, "Setting 2", NULL);
@@ -74,8 +82,10 @@ void print_menu(struct menu_t *menu, enum Menu_positions pos)
             OLED_print_str(menu->sub_menu[i]->title);
         }
     }
-    OLED_goto_pos(pos + 1, 127 - 9);
-    OLED_print_char('#');
+
+    OLED_clear_page(pos+1);
+    OLED_goto_page(pos+1);
+    OLED_print_inv_str(menu->sub_menu[pos]->title);
 }
 
 struct menu_t *navigate_menu(struct Joystick_pos_t *j, struct menu_t *curr_menu, enum Menu_positions *menu_pos)

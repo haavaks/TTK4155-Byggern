@@ -1,7 +1,7 @@
 #include "PWM.h"
 
 volatile struct Joystick_pos_t joystick = {0};
-volatile PI_controller controller = {2, 0.1, 0.2, 0, 0};
+volatile PI_controller controller = {1, 0.01, 0.5, 0, 0};
 
 void PWM_Handler(void)
 {
@@ -11,12 +11,9 @@ void PWM_Handler(void)
 
         // int32_t encoder = (REG_TC2_CV0 + 2810)*(255)/(5620)-128; //actual range 5620
         int32_t encoder = (REG_TC2_CV0 + 3000) * (255) / (6000) - 128;
-        // printf("Maaling: %-5f\n\r", (float)encoder);
 
         float c = PI_controller_update(&controller, (float)encoder, (float)joystick.pos_y);
-        // PWM_set_duty_motor(c);
-
-        // printf("Padrag: %-5f Integral: %-5f\n\r", c, controller.integral);
+        PWM_set_duty_motor(c);
     }
 }
 
@@ -79,6 +76,7 @@ void PWM_init()
     // Set pin12 as pwm output
     PIOB->PIO_PDR |= PIO_PB12;
     PIOB->PIO_ABSR |= PIO_PB12;
+    PIOB->PIO_PUDR |= PIO_PUDR_P12;
 
     NVIC_EnableIRQ(PWM_IRQn);
 
@@ -89,18 +87,20 @@ void PWM_init()
     PIOC->PIO_OER |= PIO_OER_P23;
 
     PIOC->PIO_PER |= PIO_PER_P23;
+    PIOC->PIO_PUDR |= PIO_PUDR_P23;
+
+    REG_PWM_ENA |= PWM_ENA_CHID0;
+    REG_PWM_ENA |= PWM_ENA_CHID1;
 }
 
 uint32_t servo_map(int8_t x)
 {
-
-    return (uint32_t)((x + 128) * (5500 - 2400) / (256) + 2400); // Range sat to +-128, but our joystick gives +-88
+    return (uint32_t)((x + 128) * (5500 - 2400) / (256) + 2400); // Input range sat to +-128, but our joystick gives +-88
 }
 
 uint32_t motor_map(int8_t x)
 {
-
-    return (uint32_t)((x + 128) * (MOTOR_PWM_PERIOD) / (256)); // Range sat to +-128, but our joystick gives +-88
+    return (uint32_t)((x + 128) * (MOTOR_PWM_PERIOD) / (256)); // Input range sat to +-128, but our joystick gives +-88
 }
 
 void PWM_set_duty_servo(int8_t value)
@@ -108,7 +108,6 @@ void PWM_set_duty_servo(int8_t value)
     REG_PWM_CDTYUPD1 = servo_map(value);
 }
 
-// TODO: Fix this function! Map from 0 to MOTOR_PWM_PERIOD
 void PWM_set_duty_motor(int8_t value)
 {
     if (value >= 0)
@@ -125,7 +124,7 @@ void PWM_set_duty_motor(int8_t value)
 
 void update_joystick_pos_from_CAN(CanMsg msg)
 {
-    if (msg.id == Joystick_id) // Joystick pos
+    if (msg.id == Joystick_id)
     {
         joystick.pos_x = msg.byte[0];
         joystick.pos_y = msg.byte[1];
@@ -136,13 +135,36 @@ void update_joystick_pos_from_CAN(CanMsg msg)
 
 void PWM_stop()
 {
-    REG_PWM_DIS |= PWM_DIS_CHID0;
-    REG_PWM_DIS |= PWM_DIS_CHID1;
+    PIOB->PIO_PER = PIO_PER_P12;
+    PIOB->PIO_OER = PIO_OER_P12;
+    PIOB->PIO_CODR = PIO_CODR_P12;
+
+    PIOB->PIO_PER = PIO_PER_P13;
+    PIOB->PIO_OER = PIO_OER_P13;
+    PIOB->PIO_CODR = PIO_CODR_P13;
+
+    // REG_PWM_DIS |= PWM_DIS_CHID0;
+    // REG_PWM_DIS |= PWM_DIS_CHID1;
+
+    // // Disable interupt on event
+    // REG_PWM_IDR1 |= PWM_IDR1_CHID1;
+    // REG_PWM_IDR2 |= PWM_IDR2_CMPM1;
 }
 
 void PWM_start()
 {
-    REG_PWM_ENA |= PWM_ENA_CHID0;
-    REG_PWM_ENA |= PWM_ENA_CHID1;
+
+    // REG_PWM_ENA |= PWM_ENA_CHID0;
+    // REG_PWM_ENA |= PWM_ENA_CHID1;
+
+    PIOB->PIO_PDR = PIO_PDR_P12;
+    PIOB->PIO_ABSR &= ~PIO_ABSR_P12;
+    PIOB->PIO_PDR = PIO_PDR_P13;
+    PIOB->PIO_ABSR &= ~PIO_ABSR_P13;
+
     PI_controller_reset(&controller);
+
+    // // enable interupt on event
+    // REG_PWM_IER1 |= PWM_IER1_CHID1;
+    // REG_PWM_IER2 |= PWM_IER2_CMPM1;
 }
